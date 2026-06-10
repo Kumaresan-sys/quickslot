@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart';
 
 class SocketClient {
-  IO.Socket? _socket;
+  Socket? _socket;
   final String url;
   
   // Stream to broadcast slot updates to UI
@@ -12,21 +12,20 @@ class SocketClient {
   SocketClient({required this.url});
 
   void connect() {
-    _socket = IO.io(url, <String, dynamic>{
+    _socket = io(url, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
 
     _socket?.onConnect((_) {
-      print('WebSocket connected');
+      // connected
     });
 
     _socket?.on('slot_update', (data) {
-      print('Slot update received: $data');
       _slotUpdateController.add(Map<String, dynamic>.from(data));
     });
 
-    _socket?.onDisconnect((_) => print('WebSocket disconnected'));
+    _socket?.onDisconnect((_) {});
 
     _socket?.connect();
   }
