@@ -8,8 +8,8 @@ part of 'slot_model.dart';
 
 SlotModel _$SlotModelFromJson(Map<String, dynamic> json) => SlotModel(
   id: json['id'] as String,
-  mappedVenueId: json['venue_id'] as String,
-  mappedSlotTime: json['slot_time'] as String,
+  mappedVenueId: json['venue_id'] as String?,
+  mappedSlotTime: json['slot_time'] as String?,
 );
 
 Map<String, dynamic> _$SlotModelToJson(SlotModel instance) => <String, dynamic>{
@@ -20,10 +20,10 @@ Map<String, dynamic> _$SlotModelToJson(SlotModel instance) => <String, dynamic>{
 
 DailySlotModel _$DailySlotModelFromJson(Map<String, dynamic> json) =>
     DailySlotModel(
-      mappedSlotId: json['slot_id'] as String,
-      mappedVenueId: json['venue_id'] as String,
+      mappedSlotId: json['slot_id'] as String?,
+      mappedVenueId: json['venue_id'] as String?,
       date: json['date'] as String,
-      mappedSlotTime: json['slot_time'] as String,
+      mappedSlotTime: json['slot_time'] as String?,
       status: json['status'] as String,
     );
 

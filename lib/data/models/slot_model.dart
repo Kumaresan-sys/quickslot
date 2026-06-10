@@ -6,40 +6,54 @@ part 'slot_model.g.dart';
 @JsonSerializable()
 class SlotModel extends Slot {
   @JsonKey(name: 'venue_id')
-  final String mappedVenueId;
+  final String? mappedVenueId;
 
   @JsonKey(name: 'slot_time')
-  final String mappedSlotTime;
+  final String? mappedSlotTime;
 
   const SlotModel({
     required super.id,
-    required this.mappedVenueId,
-    required this.mappedSlotTime,
-  }) : super(venueId: mappedVenueId, slotTime: mappedSlotTime);
+    this.mappedVenueId,
+    this.mappedSlotTime,
+  }) : super(venueId: mappedVenueId ?? '', slotTime: mappedSlotTime ?? '');
 
-  factory SlotModel.fromJson(Map<String, dynamic> json) => _$SlotModelFromJson(json);
+  factory SlotModel.fromJson(Map<String, dynamic> json) => SlotModel(
+        id: (json['slot_id'] ?? json['id'] ?? '') as String,
+        mappedVenueId: json['venue_id'] as String?,
+        mappedSlotTime: json['slot_time'] as String?,
+      );
   Map<String, dynamic> toJson() => _$SlotModelToJson(this);
 }
 
 @JsonSerializable()
 class DailySlotModel extends DailySlot {
   @JsonKey(name: 'slot_id')
-  final String mappedSlotId;
+  final String? mappedSlotId;
 
   @JsonKey(name: 'venue_id')
-  final String mappedVenueId;
+  final String? mappedVenueId;
 
   @JsonKey(name: 'slot_time')
-  final String mappedSlotTime;
+  final String? mappedSlotTime;
 
   const DailySlotModel({
-    required this.mappedSlotId,
-    required this.mappedVenueId,
+    this.mappedSlotId,
+    this.mappedVenueId,
     required super.date,
-    required this.mappedSlotTime,
+    this.mappedSlotTime,
     required super.status,
-  }) : super(slotId: mappedSlotId, venueId: mappedVenueId, slotTime: mappedSlotTime);
+  }) : super(
+        slotId: mappedSlotId ?? '',
+        venueId: mappedVenueId ?? '',
+        slotTime: mappedSlotTime ?? '',
+      );
 
-  factory DailySlotModel.fromJson(Map<String, dynamic> json) => _$DailySlotModelFromJson(json);
+  factory DailySlotModel.fromJson(Map<String, dynamic> json) => DailySlotModel(
+        mappedSlotId: json['slot_id'] as String?,
+        mappedVenueId: json['venue_id'] as String?,
+        date: json['date'] as String? ?? '',
+        mappedSlotTime: json['slot_time'] as String?,
+        status: json['status'] as String? ?? 'AVAILABLE',
+      );
   Map<String, dynamic> toJson() => _$DailySlotModelToJson(this);
 }

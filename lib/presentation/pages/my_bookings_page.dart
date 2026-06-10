@@ -109,8 +109,9 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        const Text('Venue ID / Slot ID hidden for simplicity'), 
-                        // Note: In a real app we'd fetch Venue/Slot details to show names/times here
+                        Text('${booking.venueName ?? 'Unknown Venue'} - ${booking.location ?? 'Unknown Location'}', style: const TextStyle(fontSize: 14)),
+                        const SizedBox(height: 4),
+                        Text('Time: ${booking.slotTime ?? 'Unknown Time'}', style: const TextStyle(fontSize: 14, color: Colors.grey)),
                         const SizedBox(height: 16),
                         if (isConfirmed)
                           Align(
