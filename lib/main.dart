@@ -1,121 +1,106 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'core/theme.dart';
+import 'core/network/api_client.dart';
+import 'core/network/token_storage.dart';
+import 'core/network/socket_client.dart';
+
+import 'data/repositories/auth_repository_impl.dart';
+import 'data/repositories/venue_repository_impl.dart';
+import 'data/repositories/booking_repository_impl.dart';
+
+import 'domain/usecases/auth_usecases.dart';
+import 'domain/usecases/get_venues_usecase.dart';
+import 'domain/usecases/get_slots_usecase.dart';
+import 'domain/usecases/booking_usecases.dart';
+
+import 'presentation/blocs/auth/auth_cubit.dart';
+import 'presentation/blocs/venue/venue_list_cubit.dart';
+import 'presentation/blocs/venue/venue_detail_bloc.dart';
+import 'presentation/blocs/booking/my_bookings_cubit.dart';
+
+import 'presentation/pages/login_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const QuickSlotApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class QuickSlotApp extends StatefulWidget {
+  const QuickSlotApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+  State<QuickSlotApp> createState() => _QuickSlotAppState();
+}
+
+class _QuickSlotAppState extends State<QuickSlotApp> {
+  // Core Utils
+  late final TokenStorage _tokenStorage;
+  late final ApiClient _apiClient;
+  late final SocketClient _socketClient;
+
+  // Repositories
+  late final AuthRepositoryImpl _authRepository;
+  late final VenueRepositoryImpl _venueRepository;
+  late final BookingRepositoryImpl _bookingRepository;
+
+  @override
+  void initState() {
+    super.initState();
+    _tokenStorage = TokenStorage();
+    _apiClient = ApiClient(baseUrl: 'http://localhost:5001', tokenStorage: _tokenStorage);
+    _socketClient = SocketClient(url: 'ws://localhost:5001');
+
+    _authRepository = AuthRepositoryImpl(apiClient: _apiClient, tokenStorage: _tokenStorage);
+    _venueRepository = VenueRepositoryImpl(apiClient: _apiClient);
+    _bookingRepository = BookingRepositoryImpl(apiClient: _apiClient);
+    
+    // Connect to WebSocket
+    _socketClient.connect();
   }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  void dispose() {
+    _socketClient.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>(
+          create: (_) => AuthCubit(
+            loginUseCase: LoginUseCase(_authRepository),
+            logoutUseCase: LogoutUseCase(_authRepository),
+            checkAuthUseCase: CheckAuthUseCase(_authRepository),
+          )..checkAuth(), // Check auth on startup
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        BlocProvider<VenueListCubit>(
+          create: (_) => VenueListCubit(
+            getVenuesUseCase: GetVenuesUseCase(_venueRepository),
+          ),
+        ),
+        BlocProvider<VenueDetailBloc>(
+          create: (_) => VenueDetailBloc(
+            getSlotsUseCase: GetSlotsUseCase(_venueRepository),
+            bookSlotUseCase: BookSlotUseCase(_bookingRepository),
+            socketClient: _socketClient,
+          ),
+        ),
+        BlocProvider<MyBookingsCubit>(
+          create: (_) => MyBookingsCubit(
+            getUserBookingsUseCase: GetUserBookingsUseCase(_bookingRepository),
+            cancelBookingUseCase: CancelBookingUseCase(_bookingRepository),
+          ),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'QuickSlot',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.dark, // Defaulting to premium dark mode
+        home: const LoginPage(),
       ),
     );
   }
