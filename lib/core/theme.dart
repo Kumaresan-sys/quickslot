@@ -24,8 +24,8 @@ class AppTheme {
       backgroundColor: AppColors.primary,
       foregroundColor: AppColors.onPrimary,
     ),
-    cardTheme: CardTheme(
-      color: Colors.white.withOpacity(0.85),
+    cardTheme: CardThemeData(
+      color: Colors.white.withValues(alpha:0.85),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -43,14 +43,13 @@ class AppTheme {
     brightness: Brightness.dark,
     primaryColor: AppColors.primary,
     scaffoldBackgroundColor: AppColors.background,
-    backgroundColor: AppColors.background,
     fontFamily: GoogleFonts.inter().fontFamily,
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.surface,
       foregroundColor: AppColors.onSurface,
     ),
-    cardTheme: CardTheme(
-      color: AppColors.surface.withOpacity(0.85),
+    cardTheme: CardThemeData(
+      color: AppColors.surface.withValues(alpha:0.85),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -61,6 +60,6 @@ class AppTheme {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-    ),
+    ), colorScheme: ColorScheme(background: AppColors.background),
   );
 }
