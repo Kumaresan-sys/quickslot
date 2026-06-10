@@ -48,8 +48,8 @@ class _QuickSlotAppState extends State<QuickSlotApp> {
   void initState() {
     super.initState();
     _tokenStorage = TokenStorage();
-    _apiClient = ApiClient(baseUrl: 'http://localhost:5001', tokenStorage: _tokenStorage);
-    _socketClient = SocketClient(url: 'ws://localhost:5001');
+    _apiClient = ApiClient(baseUrl: 'http://10.0.2.2:5001', tokenStorage: _tokenStorage);
+    _socketClient = SocketClient(url: 'ws://10.0.2.2:5001');
 
     _authRepository = AuthRepositoryImpl(apiClient: _apiClient, tokenStorage: _tokenStorage);
     _venueRepository = VenueRepositoryImpl(apiClient: _apiClient);
