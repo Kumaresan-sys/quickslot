@@ -9,14 +9,15 @@ class ApiClient {
   ApiClient({
     required this.baseUrl,
     required this.tokenStorage,
-  }) : dio = Dio(BaseOptions(
+    Dio? dio,
+  }) : dio = dio ?? Dio(BaseOptions(
           baseUrl: baseUrl,
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
           headers: {'Content-Type': 'application/json'},
         )) {
-    dio.interceptors.add(LogInterceptor(responseBody: true, requestBody: true));
-    dio.interceptors.add(_authInterceptor());
+    this.dio.interceptors.add(LogInterceptor(responseBody: true, requestBody: true));
+    this.dio.interceptors.add(_authInterceptor());
   }
 
   Interceptor _authInterceptor() {

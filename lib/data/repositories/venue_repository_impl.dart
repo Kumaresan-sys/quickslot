@@ -25,6 +25,12 @@ class VenueRepositoryImpl implements VenueRepository {
 
     final response = await apiClient.dio.get('/venues/$venueId/slots', queryParameters: queryParams);
     final data = response.data['data'] as List;
-    return data.map((json) => DailySlotModel.fromJson(json)).toList();
+    return data.map((json) {
+      if (json is Map<String, dynamic>) {
+        json['date'] = date;
+        json['venue_id'] = venueId;
+      }
+      return DailySlotModel.fromJson(json as Map<String, dynamic>);
+    }).toList();
   }
 }
