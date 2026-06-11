@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../core/network/api_endpoints.dart';
 import '../../core/network/http_service.dart';
 import '../../core/network/token_storage.dart';
@@ -68,11 +70,31 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<User?> getCurrentUser() async {
-    if (!await isLoggedIn()) return null;
-    // In a real app, you might have a /users/me endpoint.
-    // For now, we return a mock or rely on the cached token if valid.
-    // The QuickSlot API provided doesn't explicitly show a GET /me endpoint in test_endpoints.js.
-    // However, the login returns the user. We could cache the user info along with the token.
-    return null;
+    final token = await tokenStore.getAccessToken();
+    if (token == null) return null;
+
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      final payload =
+          jsonDecode(
+                utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+              )
+              as Map<String, dynamic>;
+
+      final userId = payload['userId'] as String?;
+      final email = payload['email'] as String? ?? '';
+      if (userId == null || userId.isEmpty) return null;
+
+      return User(
+        id: userId,
+        name: email.isEmpty ? 'User' : email,
+        email: email,
+      );
+    } catch (_) {
+      await tokenStore.clearTokens();
+      return null;
+    }
   }
 }

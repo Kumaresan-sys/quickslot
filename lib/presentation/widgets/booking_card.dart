@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/theme.dart';
 import '../../domain/entities/booking.dart';
 
 class BookingCard extends StatelessWidget {
@@ -9,7 +10,10 @@ class BookingCard extends StatelessWidget {
 
   const BookingCard({super.key, required this.booking, this.onCancel});
 
-  bool get _isConfirmed => booking.status == 'CONFIRMED';
+  bool get _canCancel {
+    final status = booking.status.toUpperCase();
+    return status == 'CONFIRMED' || status == 'BOOKED';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,52 +22,70 @@ class BookingCard extends StatelessWidget {
     ).format(DateTime.parse(booking.bookingDate));
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  date,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        date,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        booking.venueName ?? 'Venue details unavailable',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        booking.location ?? 'Location unavailable',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: context.appColors.mutedText),
+                      ),
+                    ],
                   ),
                 ),
-                _BookingStatusBadge(
-                  status: booking.status,
-                  isConfirmed: _isConfirmed,
-                ),
+                const SizedBox(width: AppSpacing.md),
+                _BookingStatusBadge(status: booking.status),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              '${booking.venueName ?? 'Unknown Venue'} - ${booking.location ?? 'Unknown Location'}',
-              style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Time: ${booking.slotTime ?? 'Unknown Time'}',
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            if (_isConfirmed && onCancel != null)
-              Align(
-                alignment: Alignment.centerRight,
-                child: OutlinedButton(
-                  onPressed: onCancel,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                  ),
-                  child: const Text('Cancel Booking'),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                Icon(
+                  Icons.schedule_rounded,
+                  size: 18,
+                  color: context.appColors.mutedText,
                 ),
-              ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    booking.slotTime ?? 'Time unavailable',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                if (_canCancel && onCancel != null)
+                  TextButton.icon(
+                    onPressed: onCancel,
+                    icon: const Icon(Icons.cancel_outlined, size: 18),
+                    label: const Text('Cancel'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: context.appColors.danger,
+                    ),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
@@ -73,26 +95,34 @@ class BookingCard extends StatelessWidget {
 
 class _BookingStatusBadge extends StatelessWidget {
   final String status;
-  final bool isConfirmed;
 
-  const _BookingStatusBadge({required this.status, required this.isConfirmed});
+  const _BookingStatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
-    final color = isConfirmed ? Colors.green : Colors.red;
+    final normalizedStatus = status.toUpperCase();
+    final color = switch (normalizedStatus) {
+      'CONFIRMED' || 'BOOKED' => context.appColors.success,
+      'CANCELLED' || 'CANCELED' => context.appColors.danger,
+      _ => context.appColors.warning,
+    };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Text(
-        status,
+        normalizedStatus,
         style: TextStyle(
           color: color,
           fontSize: 12,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

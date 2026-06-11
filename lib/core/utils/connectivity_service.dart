@@ -1,15 +1,38 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-class ConnectivityService {
-  final Connectivity _connectivity = Connectivity();
+abstract class ConnectivityChecker {
+  Stream<bool> get isConnectedStream;
+  Future<bool> get isConnected;
+}
 
-  Stream<bool> get isConnectedStream => _connectivity.onConnectivityChanged.map(
-        (List<ConnectivityResult> result) => 
-            result.isNotEmpty && result.first != ConnectivityResult.none,
-      );
+class ConnectivityService implements ConnectivityChecker {
+  final Connectivity connectivity;
 
+  ConnectivityService({Connectivity? connectivity})
+    : connectivity = connectivity ?? Connectivity();
+
+  @override
+  Stream<bool> get isConnectedStream => connectivity.onConnectivityChanged.map(
+    (List<ConnectivityResult> result) => _hasNetwork(result),
+  );
+
+  @override
   Future<bool> get isConnected async {
-    final result = await _connectivity.checkConnectivity();
-    return result.isNotEmpty && result.first != ConnectivityResult.none;
+    final result = await connectivity.checkConnectivity();
+    return _hasNetwork(result);
   }
+
+  bool _hasNetwork(List<ConnectivityResult> result) {
+    return result.any((connection) => connection != ConnectivityResult.none);
+  }
+}
+
+class AlwaysConnectedChecker implements ConnectivityChecker {
+  const AlwaysConnectedChecker();
+
+  @override
+  Stream<bool> get isConnectedStream => const Stream<bool>.empty();
+
+  @override
+  Future<bool> get isConnected async => true;
 }

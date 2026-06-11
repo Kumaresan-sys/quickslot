@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/user.dart';
 import '../../../domain/usecases/auth_usecases.dart';
+import '../../utils/error_message_mapper.dart';
 
 abstract class AuthState extends Equatable {
   const AuthState();
@@ -43,13 +44,9 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> checkAuth() async {
     emit(AuthLoading());
     try {
-      final isLoggedIn = await checkAuthUseCase();
-      if (isLoggedIn) {
-        // Here we could fetch the user profile if the API supported it
-        // For now, we'll just emit an empty User object to signal authentication
-        emit(
-          const AuthAuthenticated(User(id: 'cached', name: 'User', email: '')),
-        );
+      final user = await checkAuthUseCase();
+      if (user != null) {
+        emit(AuthAuthenticated(user));
       } else {
         emit(AuthUnauthenticated());
       }
@@ -64,7 +61,7 @@ class AuthCubit extends Cubit<AuthState> {
       final user = await loginUseCase(email, password);
       emit(AuthAuthenticated(user));
     } catch (e) {
-      emit(AuthError(e.toString()));
+      emit(AuthError(ErrorMessageMapper.map(e)));
       emit(
         AuthUnauthenticated(),
       ); // Reset back to unauthenticated after showing error

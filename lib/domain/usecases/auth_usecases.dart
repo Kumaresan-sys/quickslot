@@ -10,7 +10,7 @@ abstract class Logout {
 }
 
 abstract class CheckAuth {
-  Future<bool> call();
+  Future<User?> call();
 }
 
 class LoginUseCase implements Login {
@@ -41,7 +41,8 @@ class CheckAuthUseCase implements CheckAuth {
   CheckAuthUseCase(this.repository);
 
   @override
-  Future<bool> call() async {
-    return await repository.isLoggedIn();
+  Future<User?> call() async {
+    if (!await repository.isLoggedIn()) return null;
+    return repository.getCurrentUser();
   }
 }

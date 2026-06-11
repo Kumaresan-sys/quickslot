@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import '../../core/theme.dart';
 import '../../../domain/entities/venue.dart';
 import '../../../domain/entities/slot.dart';
 import '../blocs/venue/venue_detail_bloc.dart';
@@ -10,6 +11,7 @@ import '../widgets/booking_bar.dart';
 import '../widgets/date_selector_bar.dart';
 import '../widgets/slot_grid.dart';
 import '../widgets/state_views.dart';
+import '../utils/app_feedback.dart';
 
 class VenueDetailPage extends StatefulWidget {
   final Venue venue;
@@ -80,12 +82,7 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
       body: BlocConsumer<VenueDetailBloc, VenueDetailState>(
         listener: (context, state) {
           if (state is BookingSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Booking Successful!'),
-                backgroundColor: Colors.green,
-              ),
-            );
+            AppFeedback.showSuccess(context, 'Booking confirmed.');
             Navigator.pop(context); // Go back to venue list
           } else if (state is BookingConflict) {
             setState(() {
@@ -94,23 +91,18 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
             showDialog(
               context: context,
               builder: (ctx) => AlertDialog(
-                title: const Text('Slot Unavailable'),
+                title: const Text('Slot no longer available'),
                 content: Text(state.message),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('OK'),
+                    child: const Text('Choose another slot'),
                   ),
                 ],
               ),
             );
           } else if (state is VenueDetailError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            AppFeedback.showError(context, state.message);
           }
         },
         builder: (context, state) {
@@ -138,13 +130,26 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Available Slots',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Available slots',
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                              ),
+                              Text(
+                                'Live updates',
+                                style: TextStyle(
+                                  color: context.appColors.success,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: AppSpacing.sm),
+                          const SlotLegend(),
                           const SizedBox(height: 16),
                           SlotGrid(
                             slots: state.slots,

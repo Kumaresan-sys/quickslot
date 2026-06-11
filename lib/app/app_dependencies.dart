@@ -3,6 +3,7 @@ import '../core/network/api_client.dart';
 import '../core/network/auth_token_refresher.dart';
 import '../core/network/socket_client.dart';
 import '../core/network/token_storage.dart';
+import '../core/utils/connectivity_service.dart';
 import '../data/repositories/auth_repository_impl.dart';
 import '../data/repositories/booking_repository_impl.dart';
 import '../data/repositories/venue_repository_impl.dart';
@@ -14,6 +15,7 @@ import '../domain/services/booking_failure_classifier.dart';
 class AppDependencies {
   final TokenStore tokenStore;
   final ApiClient apiClient;
+  final ConnectivityChecker connectivityChecker;
   final SocketClient socketClient;
   final AuthRepository authRepository;
   final VenueRepository venueRepository;
@@ -23,6 +25,7 @@ class AppDependencies {
   AppDependencies._({
     required this.tokenStore,
     required this.apiClient,
+    required this.connectivityChecker,
     required this.socketClient,
     required this.authRepository,
     required this.venueRepository,
@@ -37,6 +40,7 @@ class AppDependencies {
     config.validate();
 
     final tokenStore = TokenStorage();
+    final connectivityChecker = ConnectivityService();
     final tokenRefresher = AuthTokenRefresher(
       baseUrl: config.apiBaseUrl,
       tokenStore: tokenStore,
@@ -44,6 +48,7 @@ class AppDependencies {
     final apiClient = ApiClient(
       baseUrl: config.apiBaseUrl,
       tokenStore: tokenStore,
+      connectivityChecker: connectivityChecker,
       tokenRefresher: tokenRefresher,
     );
     final socketClient = SocketClient(url: config.socketUrl);
@@ -54,6 +59,7 @@ class AppDependencies {
     return AppDependencies._(
       tokenStore: tokenStore,
       apiClient: apiClient,
+      connectivityChecker: connectivityChecker,
       socketClient: socketClient,
       authRepository: AuthRepositoryImpl(
         httpService: apiClient,

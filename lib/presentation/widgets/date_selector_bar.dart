@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/theme.dart';
+
 class DateSelectorBar extends StatelessWidget {
   final String selectedDate;
   final VoidCallback onSelectDate;
@@ -13,33 +15,62 @@ class DateSelectorBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Theme.of(context).cardColor,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Select Date', style: TextStyle(color: Colors.grey)),
-              const SizedBox(height: 4),
-              Text(
-                DateFormat(
-                  'EEE, MMM d, yyyy',
-                ).format(DateTime.parse(selectedDate)),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+    return Card(
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-            ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.calendar_month, color: Colors.blueAccent),
-            onPressed: onSelectDate,
-          ),
-        ],
+              child: Icon(
+                Icons.calendar_month_rounded,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Selected date',
+                    style: TextStyle(
+                      color: context.appColors.mutedText,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    DateFormat(
+                      'EEE, MMM d, yyyy',
+                    ).format(DateTime.parse(selectedDate)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: onSelectDate,
+              icon: const Icon(Icons.edit_calendar_rounded, size: 18),
+              label: const Text('Change'),
+            ),
+          ],
+        ),
       ),
     );
   }

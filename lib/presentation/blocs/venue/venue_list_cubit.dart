@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/venue.dart';
 import '../../../domain/usecases/get_venues_usecase.dart';
+import '../../utils/error_message_mapper.dart';
 
 abstract class VenueListState extends Equatable {
   const VenueListState();
@@ -44,7 +45,7 @@ class VenueListCubit extends Cubit<VenueListState> {
         emit(VenueListLoaded(venues));
       }
     } catch (e) {
-      emit(VenueListError(e.toString()));
+      emit(VenueListError(ErrorMessageMapper.map(e)));
     }
   }
 }
