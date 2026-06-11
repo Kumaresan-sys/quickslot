@@ -11,7 +11,7 @@ void main() {
   group('VenueRepositoryImpl', () {
     final tokenStorage = TokenStorage();
     final apiClient = MockApiClient.create(tokenStorage);
-    final repo = VenueRepositoryImpl(apiClient: apiClient);
+    final repo = VenueRepositoryImpl(httpService: apiClient);
 
     test('getVenues returns a non‑empty list', () async {
       final venues = await repo.getVenues();

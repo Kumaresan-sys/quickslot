@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import '../blocs/booking/my_bookings_cubit.dart';
 import '../blocs/auth/auth_cubit.dart';
+import '../widgets/booking_card.dart';
 import '../widgets/state_views.dart';
 
 class MyBookingsPage extends StatefulWidget {
@@ -38,7 +38,10 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
               Navigator.pop(ctx);
               context.read<MyBookingsCubit>().cancelBooking(bookingId, userId);
             },
-            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
+            child: const Text(
+              'Yes, Cancel',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -48,14 +51,15 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Bookings'),
-      ),
+      appBar: AppBar(title: const Text('My Bookings')),
       body: BlocConsumer<MyBookingsCubit, MyBookingsState>(
         listener: (context, state) {
           if (state is MyBookingsError) {
-             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         },
@@ -63,70 +67,24 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
           if (state is MyBookingsLoading || state is MyBookingsInitial) {
             return StateViews.loading();
           } else if (state is MyBookingsEmpty) {
-            return StateViews.empty('No Bookings', 'You haven\'t booked any slots yet.');
+            return StateViews.empty(
+              'No Bookings',
+              'You haven\'t booked any slots yet.',
+            );
           } else if (state is MyBookingsLoaded) {
             final authState = context.read<AuthCubit>().state;
-            final userId = authState is AuthAuthenticated ? authState.user.id : '';
+            final userId = authState is AuthAuthenticated
+                ? authState.user.id
+                : '';
 
             return ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: state.bookings.length,
               itemBuilder: (context, index) {
                 final booking = state.bookings[index];
-                final isConfirmed = booking.status == 'CONFIRMED';
-                final dateStr = DateFormat('MMM d, yyyy').format(DateTime.parse(booking.bookingDate));
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              dateStr,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isConfirmed ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                booking.status,
-                                style: TextStyle(
-                                  color: isConfirmed ? Colors.green : Colors.red,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            )
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text('${booking.venueName ?? 'Unknown Venue'} - ${booking.location ?? 'Unknown Location'}', style: const TextStyle(fontSize: 14)),
-                        const SizedBox(height: 4),
-                        Text('Time: ${booking.slotTime ?? 'Unknown Time'}', style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                        const SizedBox(height: 16),
-                        if (isConfirmed)
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: OutlinedButton(
-                              onPressed: () => _confirmCancel(booking.id, userId),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.red, side: const BorderSide(color: Colors.red),
-                              ),
-                              child: const Text('Cancel Booking'),
-                            ),
-                          )
-                      ],
-                    ),
-                  ),
+                return BookingCard(
+                  booking: booking,
+                  onCancel: () => _confirmCancel(booking.id, userId),
                 );
               },
             );

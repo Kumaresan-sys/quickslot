@@ -30,9 +30,19 @@ flutter pub get
 
 ### Running the App
 
+Configure the backend endpoints in `assets/.env`:
+
+```env
+QUICKSLOT_API_BASE_URL=http://10.0.2.2:5001
+QUICKSLOT_SOCKET_URL=ws://10.0.2.2:5001
+```
+
 ```bash
 flutter run
 ```
+
+For production or staging, replace the values with the matching HTTPS/WSS
+endpoints before building.
 
 ## Usage
 

@@ -1,75 +1,97 @@
 import 'package:dio/dio.dart';
+import 'auth_token_refresher.dart';
+import 'http_service.dart';
 import 'token_storage.dart';
 
-class ApiClient {
+class ApiClient implements HttpService {
   final Dio dio;
-  final TokenStorage tokenStorage;
+  final TokenStore tokenStore;
+  final TokenRefresher? tokenRefresher;
   final String baseUrl;
 
   ApiClient({
     required this.baseUrl,
-    required this.tokenStorage,
+    required this.tokenStore,
+    this.tokenRefresher,
     Dio? dio,
-  }) : dio = dio ?? Dio(BaseOptions(
-          baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
-          headers: {'Content-Type': 'application/json'},
-        )) {
-    this.dio.interceptors.add(LogInterceptor(responseBody: true, requestBody: true));
+  }) : dio =
+           dio ??
+           Dio(
+             BaseOptions(
+               baseUrl: baseUrl,
+               connectTimeout: const Duration(seconds: 10),
+               receiveTimeout: const Duration(seconds: 10),
+               headers: {'Content-Type': 'application/json'},
+             ),
+           ) {
+    this.dio.interceptors.add(
+      LogInterceptor(responseBody: true, requestBody: true),
+    );
     this.dio.interceptors.add(_authInterceptor());
   }
 
   Interceptor _authInterceptor() {
     return InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final accessToken = await tokenStorage.getAccessToken();
+        final accessToken = await tokenStore.getAccessToken();
         if (accessToken != null) {
           options.headers['Authorization'] = 'Bearer $accessToken';
         }
         return handler.next(options);
       },
       onError: (DioException e, handler) async {
-        if (e.response?.statusCode == 401) {
-          // Token expired, attempt refresh
-          final refreshToken = await tokenStorage.getRefreshToken();
-          if (refreshToken != null) {
-            try {
-              final refreshDio = Dio(BaseOptions(baseUrl: baseUrl));
-              final response = await refreshDio.post('/auth/refresh', data: {
-                'refreshToken': refreshToken,
-              });
-
-              if (response.statusCode == 200) {
-                final newAccessToken = response.data['data']['accessToken'];
-                final newRefreshToken = response.data['data']['refreshToken'];
-
-                await tokenStorage.saveTokens(
-                  accessToken: newAccessToken,
-                  refreshToken: newRefreshToken,
-                );
-
-                // Retry original request
-                e.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
-                final cloneReq = await refreshDio.request(
-                  e.requestOptions.path,
-                  options: Options(
-                    method: e.requestOptions.method,
-                    headers: e.requestOptions.headers,
-                  ),
-                  data: e.requestOptions.data,
-                  queryParameters: e.requestOptions.queryParameters,
-                );
-                return handler.resolve(cloneReq);
-              }
-            } catch (_) {
-              await tokenStorage.clearTokens();
-              // In a real app, you might emit a global event to force logout here.
+        if (e.response?.statusCode == 401 && tokenRefresher != null) {
+          try {
+            final newAccessToken = await tokenRefresher!.refreshAccessToken();
+            if (newAccessToken != null) {
+              e.requestOptions.headers['Authorization'] =
+                  'Bearer $newAccessToken';
+              final retryResponse = await dio.fetch(e.requestOptions);
+              return handler.resolve(retryResponse);
             }
+          } catch (_) {
+            await tokenStore.clearTokens();
           }
         }
         return handler.next(e);
       },
     );
+  }
+
+  @override
+  Future<dynamic> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final response = await dio.get(path, queryParameters: queryParameters);
+    return response.data;
+  }
+
+  @override
+  Future<dynamic> post(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final response = await dio.post(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<dynamic> delete(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final response = await dio.delete(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+    );
+    return response.data;
   }
 }

@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'app/app_dependencies.dart';
+import 'core/config/app_config.dart';
 import 'core/theme.dart';
-import 'core/network/api_client.dart';
-import 'core/network/token_storage.dart';
-import 'core/network/socket_client.dart';
-
-import 'data/repositories/auth_repository_impl.dart';
-import 'data/repositories/venue_repository_impl.dart';
-import 'data/repositories/booking_repository_impl.dart';
-
 import 'domain/usecases/auth_usecases.dart';
 import 'domain/usecases/get_venues_usecase.dart';
 import 'domain/usecases/get_slots_usecase.dart';
@@ -22,46 +16,45 @@ import 'presentation/blocs/booking/my_bookings_cubit.dart';
 
 import 'presentation/pages/login_page.dart';
 
-void main() {
-  runApp(const QuickSlotApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final config = await AppConfig.load();
+  runApp(QuickSlotApp(config: config));
 }
 
 class QuickSlotApp extends StatefulWidget {
-  const QuickSlotApp({super.key});
+  final AppDependencies? dependencies;
+  final AppConfig config;
+  final bool connectSocket;
+
+  const QuickSlotApp({
+    super.key,
+    this.dependencies,
+    required this.config,
+    this.connectSocket = true,
+  });
 
   @override
   State<QuickSlotApp> createState() => _QuickSlotAppState();
 }
 
 class _QuickSlotAppState extends State<QuickSlotApp> {
-  // Core Utils
-  late final TokenStorage _tokenStorage;
-  late final ApiClient _apiClient;
-  late final SocketClient _socketClient;
-
-  // Repositories
-  late final AuthRepositoryImpl _authRepository;
-  late final VenueRepositoryImpl _venueRepository;
-  late final BookingRepositoryImpl _bookingRepository;
+  late final AppDependencies _dependencies;
 
   @override
   void initState() {
     super.initState();
-    _tokenStorage = TokenStorage();
-    _apiClient = ApiClient(baseUrl: 'https://quickslot-api-1slu.onrender.com', tokenStorage: _tokenStorage);
-    _socketClient = SocketClient(url: 'ws://quickslot-api-1slu.onrender.com');
-
-    _authRepository = AuthRepositoryImpl(apiClient: _apiClient, tokenStorage: _tokenStorage);
-    _venueRepository = VenueRepositoryImpl(apiClient: _apiClient);
-    _bookingRepository = BookingRepositoryImpl(apiClient: _apiClient);
-    
-    // Connect to WebSocket
-    _socketClient.connect();
+    _dependencies =
+        widget.dependencies ??
+        AppDependencies.create(
+          config: widget.config,
+          connectSocket: widget.connectSocket,
+        );
   }
 
   @override
   void dispose() {
-    _socketClient.dispose();
+    _dependencies.dispose();
     super.dispose();
   }
 
@@ -71,27 +64,32 @@ class _QuickSlotAppState extends State<QuickSlotApp> {
       providers: [
         BlocProvider<AuthCubit>(
           create: (_) => AuthCubit(
-            loginUseCase: LoginUseCase(_authRepository),
-            logoutUseCase: LogoutUseCase(_authRepository),
-            checkAuthUseCase: CheckAuthUseCase(_authRepository),
+            loginUseCase: LoginUseCase(_dependencies.authRepository),
+            logoutUseCase: LogoutUseCase(_dependencies.authRepository),
+            checkAuthUseCase: CheckAuthUseCase(_dependencies.authRepository),
           )..checkAuth(), // Check auth on startup
         ),
         BlocProvider<VenueListCubit>(
           create: (_) => VenueListCubit(
-            getVenuesUseCase: GetVenuesUseCase(_venueRepository),
+            getVenuesUseCase: GetVenuesUseCase(_dependencies.venueRepository),
           ),
         ),
         BlocProvider<VenueDetailBloc>(
           create: (_) => VenueDetailBloc(
-            getSlotsUseCase: GetSlotsUseCase(_venueRepository),
-            bookSlotUseCase: BookSlotUseCase(_bookingRepository),
-            socketClient: _socketClient,
+            getSlotsUseCase: GetSlotsUseCase(_dependencies.venueRepository),
+            bookSlotUseCase: BookSlotUseCase(_dependencies.bookingRepository),
+            slotUpdateSource: _dependencies.socketClient,
+            bookingFailureClassifier: _dependencies.bookingFailureClassifier,
           ),
         ),
         BlocProvider<MyBookingsCubit>(
           create: (_) => MyBookingsCubit(
-            getUserBookingsUseCase: GetUserBookingsUseCase(_bookingRepository),
-            cancelBookingUseCase: CancelBookingUseCase(_bookingRepository),
+            getUserBookingsUseCase: GetUserBookingsUseCase(
+              _dependencies.bookingRepository,
+            ),
+            cancelBookingUseCase: CancelBookingUseCase(
+              _dependencies.bookingRepository,
+            ),
           ),
         ),
       ],
