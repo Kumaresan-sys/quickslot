@@ -10,14 +10,18 @@ abstract class VenueListState extends Equatable {
 }
 
 class VenueListInitial extends VenueListState {}
+
 class VenueListLoading extends VenueListState {}
+
 class VenueListLoaded extends VenueListState {
   final List<Venue> venues;
   const VenueListLoaded(this.venues);
   @override
   List<Object?> get props => [venues];
 }
+
 class VenueListEmpty extends VenueListState {}
+
 class VenueListError extends VenueListState {
   final String message;
   const VenueListError(this.message);
@@ -26,7 +30,7 @@ class VenueListError extends VenueListState {
 }
 
 class VenueListCubit extends Cubit<VenueListState> {
-  final GetVenuesUseCase getVenuesUseCase;
+  final GetVenues getVenuesUseCase;
 
   VenueListCubit({required this.getVenuesUseCase}) : super(VenueListInitial());
 

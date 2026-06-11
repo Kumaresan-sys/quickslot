@@ -11,7 +11,10 @@ void main() {
   group('AuthRepositoryImpl', () {
     final tokenStorage = TokenStorage();
     final apiClient = MockApiClient.create(tokenStorage);
-    final repo = AuthRepositoryImpl(apiClient: apiClient, tokenStorage: tokenStorage);
+    final repo = AuthRepositoryImpl(
+      httpService: apiClient,
+      tokenStore: tokenStorage,
+    );
 
     test('login returns a User', () async {
       final user = await repo.login('test@example.com', 'password123');

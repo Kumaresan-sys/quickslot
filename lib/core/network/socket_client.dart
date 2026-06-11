@@ -1,12 +1,18 @@
 import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart';
 
-class SocketClient {
+abstract class SlotUpdateSource {
+  Stream<Map<String, dynamic>> get slotUpdates;
+}
+
+class SocketClient implements SlotUpdateSource {
   Socket? _socket;
   final String url;
-  
+
   // Stream to broadcast slot updates to UI
-  final _slotUpdateController = StreamController<Map<String, dynamic>>.broadcast();
+  final _slotUpdateController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  @override
   Stream<Map<String, dynamic>> get slotUpdates => _slotUpdateController.stream;
 
   SocketClient({required this.url});
@@ -33,7 +39,7 @@ class SocketClient {
   void disconnect() {
     _socket?.disconnect();
   }
-  
+
   void dispose() {
     _socket?.dispose();
     _slotUpdateController.close();

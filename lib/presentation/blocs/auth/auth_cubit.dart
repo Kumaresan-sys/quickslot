@@ -10,14 +10,18 @@ abstract class AuthState extends Equatable {
 }
 
 class AuthInitial extends AuthState {}
+
 class AuthLoading extends AuthState {}
+
 class AuthAuthenticated extends AuthState {
   final User user;
   const AuthAuthenticated(this.user);
   @override
   List<Object?> get props => [user];
 }
+
 class AuthUnauthenticated extends AuthState {}
+
 class AuthError extends AuthState {
   final String message;
   const AuthError(this.message);
@@ -26,9 +30,9 @@ class AuthError extends AuthState {
 }
 
 class AuthCubit extends Cubit<AuthState> {
-  final LoginUseCase loginUseCase;
-  final LogoutUseCase logoutUseCase;
-  final CheckAuthUseCase checkAuthUseCase;
+  final Login loginUseCase;
+  final Logout logoutUseCase;
+  final CheckAuth checkAuthUseCase;
 
   AuthCubit({
     required this.loginUseCase,
@@ -43,7 +47,9 @@ class AuthCubit extends Cubit<AuthState> {
       if (isLoggedIn) {
         // Here we could fetch the user profile if the API supported it
         // For now, we'll just emit an empty User object to signal authentication
-        emit(const AuthAuthenticated(User(id: 'cached', name: 'User', email: '')));
+        emit(
+          const AuthAuthenticated(User(id: 'cached', name: 'User', email: '')),
+        );
       } else {
         emit(AuthUnauthenticated());
       }
@@ -59,7 +65,9 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthAuthenticated(user));
     } catch (e) {
       emit(AuthError(e.toString()));
-      emit(AuthUnauthenticated()); // Reset back to unauthenticated after showing error
+      emit(
+        AuthUnauthenticated(),
+      ); // Reset back to unauthenticated after showing error
     }
   }
 

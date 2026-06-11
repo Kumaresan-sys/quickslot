@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quickslot/core/network/api_endpoints.dart';
 import 'package:quickslot/data/repositories/booking_repository_impl.dart';
 // import 'package:quickslot/core/network/api_client.dart'; // Removed unused import
 import 'package:quickslot/core/network/token_storage.dart';
@@ -11,13 +12,15 @@ void main() {
   group('BookingRepositoryImpl', () {
     final tokenStorage = TokenStorage();
     final apiClient = MockApiClient.create(tokenStorage);
-    final repo = BookingRepositoryImpl(apiClient: apiClient);
+    final repo = BookingRepositoryImpl(httpService: apiClient);
 
     test('create booking returns a booking id', () async {
       // Ensure we have a venue and slot first
-      final venueRes = await apiClient.dio.get('/venues');
+      final venueRes = await apiClient.dio.get(ApiEndpoints.venues);
       final venueId = (venueRes.data['data'] as List).first['id'];
-      final slotsRes = await apiClient.dio.get('/venues/$venueId/slots?date=2026-06-15');
+      final slotsRes = await apiClient.dio.get(
+        '${ApiEndpoints.venueSlots(venueId)}?date=2026-06-15',
+      );
       final slotId = (slotsRes.data['data'] as List).first['slot_id'];
 
       final booking = await repo.createBooking(venueId, slotId, '2026-06-15');
@@ -26,9 +29,11 @@ void main() {
 
     test('cancel booking returns cancelled status', () async {
       // Create a booking first
-      final venueRes = await apiClient.dio.get('/venues');
+      final venueRes = await apiClient.dio.get(ApiEndpoints.venues);
       final venueId = (venueRes.data['data'] as List).first['id'];
-      final slotsRes = await apiClient.dio.get('/venues/$venueId/slots?date=2026-06-15');
+      final slotsRes = await apiClient.dio.get(
+        '${ApiEndpoints.venueSlots(venueId)}?date=2026-06-15',
+      );
       final slotId = (slotsRes.data['data'] as List).first['slot_id'];
       final created = await repo.createBooking(venueId, slotId, '2026-06-15');
 

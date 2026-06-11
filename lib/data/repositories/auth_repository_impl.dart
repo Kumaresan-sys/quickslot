@@ -1,26 +1,27 @@
-import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../core/network/http_service.dart';
 import '../../core/network/token_storage.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../models/user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final ApiClient apiClient;
-  final TokenStorage tokenStorage;
+  final HttpService httpService;
+  final TokenStore tokenStore;
 
-  AuthRepositoryImpl({required this.apiClient, required this.tokenStorage});
+  AuthRepositoryImpl({required this.httpService, required this.tokenStore});
 
   @override
   Future<User> login(String email, String password) async {
-    final response = await apiClient.dio.post('/auth/login', data: {
-      'email': email,
-      'password': password,
-    });
+    final response = await httpService.post(
+      ApiEndpoints.authLogin,
+      data: {'email': email, 'password': password},
+    );
 
-    final data = response.data['data'];
+    final data = response['data'];
     final userModel = UserModel.fromJson(data['user']);
-    
-    await tokenStorage.saveTokens(
+
+    await tokenStore.saveTokens(
       accessToken: data['accessToken'],
       refreshToken: data['refreshToken'],
     );
@@ -31,35 +32,37 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> logout() async {
     try {
-      final refreshToken = await tokenStorage.getRefreshToken();
+      final refreshToken = await tokenStore.getRefreshToken();
       if (refreshToken != null) {
-        await apiClient.dio.post('/auth/logout', data: {
-          'refreshToken': refreshToken,
-        });
+        await httpService.post(
+          ApiEndpoints.authLogout,
+          data: {'refreshToken': refreshToken},
+        );
       }
     } finally {
-      await tokenStorage.clearTokens();
+      await tokenStore.clearTokens();
     }
   }
 
   @override
   Future<void> refreshToken() async {
-    final refreshToken = await tokenStorage.getRefreshToken();
+    final refreshToken = await tokenStore.getRefreshToken();
     if (refreshToken == null) throw Exception('No refresh token');
 
-    final response = await apiClient.dio.post('/auth/refresh', data: {
-      'refreshToken': refreshToken,
-    });
-    
-    await tokenStorage.saveTokens(
-      accessToken: response.data['data']['accessToken'],
-      refreshToken: response.data['data']['refreshToken'],
+    final response = await httpService.post(
+      ApiEndpoints.authRefresh,
+      data: {'refreshToken': refreshToken},
+    );
+
+    await tokenStore.saveTokens(
+      accessToken: response['data']['accessToken'],
+      refreshToken: response['data']['refreshToken'],
     );
   }
 
   @override
   Future<bool> isLoggedIn() async {
-    final token = await tokenStorage.getAccessToken();
+    final token = await tokenStore.getAccessToken();
     return token != null;
   }
 
@@ -70,6 +73,6 @@ class AuthRepositoryImpl implements AuthRepository {
     // For now, we return a mock or rely on the cached token if valid.
     // The QuickSlot API provided doesn't explicitly show a GET /me endpoint in test_endpoints.js.
     // However, the login returns the user. We could cache the user info along with the token.
-    return null; 
+    return null;
   }
 }

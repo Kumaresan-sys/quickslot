@@ -10,14 +10,18 @@ abstract class MyBookingsState extends Equatable {
 }
 
 class MyBookingsInitial extends MyBookingsState {}
+
 class MyBookingsLoading extends MyBookingsState {}
+
 class MyBookingsLoaded extends MyBookingsState {
   final List<Booking> bookings;
   const MyBookingsLoaded(this.bookings);
   @override
   List<Object?> get props => [bookings];
 }
+
 class MyBookingsEmpty extends MyBookingsState {}
+
 class MyBookingsError extends MyBookingsState {
   final String message;
   const MyBookingsError(this.message);
@@ -26,8 +30,8 @@ class MyBookingsError extends MyBookingsState {
 }
 
 class MyBookingsCubit extends Cubit<MyBookingsState> {
-  final GetUserBookingsUseCase getUserBookingsUseCase;
-  final CancelBookingUseCase cancelBookingUseCase;
+  final GetUserBookings getUserBookingsUseCase;
+  final CancelBooking cancelBookingUseCase;
 
   MyBookingsCubit({
     required this.getUserBookingsUseCase,
