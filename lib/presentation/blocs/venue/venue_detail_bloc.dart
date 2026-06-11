@@ -6,6 +6,7 @@ import '../../../domain/usecases/get_slots_usecase.dart';
 import '../../../domain/usecases/booking_usecases.dart';
 import '../../../domain/services/booking_failure_classifier.dart';
 import '../../../core/network/socket_client.dart';
+import '../../utils/error_message_mapper.dart';
 import 'venue_detail_event.dart';
 import 'venue_detail_state.dart';
 
@@ -61,7 +62,7 @@ class VenueDetailBloc extends Bloc<VenueDetailEvent, VenueDetailState> {
         VenueDetailError(
           selectedDate: event.date,
           slots: state.slots,
-          message: e.toString(),
+          message: ErrorMessageMapper.map(e),
         ),
       );
     }
@@ -128,7 +129,7 @@ class VenueDetailBloc extends Bloc<VenueDetailEvent, VenueDetailState> {
           VenueDetailError(
             selectedDate: state.selectedDate,
             slots: state.slots,
-            message: e.toString(),
+            message: ErrorMessageMapper.map(e),
           ),
         );
       }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../core/theme.dart';
 import '../blocs/venue/venue_list_cubit.dart';
 import '../blocs/auth/auth_cubit.dart';
 import '../widgets/state_views.dart';
@@ -26,10 +27,10 @@ class _VenueListPageState extends State<VenueListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Venues'),
+        title: const Text('Find a venue'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.list_alt),
+            icon: const Icon(Icons.list_alt_rounded),
             tooltip: 'My Bookings',
             onPressed: () {
               Navigator.push(
@@ -39,7 +40,7 @@ class _VenueListPageState extends State<VenueListPage> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_rounded),
             tooltip: 'Logout',
             onPressed: () {
               context.read<AuthCubit>().logout();
@@ -65,29 +66,47 @@ class _VenueListPageState extends State<VenueListPage> {
           } else if (state is VenueListEmpty) {
             return StateViews.empty(
               'No Venues Found',
-              'We are currently expanding to your area!',
+              'We are expanding to more courts and venues soon.',
+              icon: Icons.stadium_outlined,
             );
           } else if (state is VenueListLoaded) {
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: state.venues.length,
-              itemBuilder: (context, index) {
-                final venue = state.venues[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: VenueCard(
-                    venue: venue,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => VenueDetailPage(venue: venue),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
+            return RefreshIndicator(
+              onRefresh: () => context.read<VenueListCubit>().loadVenues(),
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                ),
+                itemCount: state.venues.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                      child: Text(
+                        'Choose a venue to view live slot availability.',
+                        style: TextStyle(color: context.appColors.mutedText),
+                      ),
+                    );
+                  }
+                  final venue = state.venues[index - 1];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                    child: VenueCard(
+                      venue: venue,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => VenueDetailPage(venue: venue),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
             );
           }
           return const SizedBox.shrink();

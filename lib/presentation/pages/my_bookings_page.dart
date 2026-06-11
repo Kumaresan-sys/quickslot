@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../core/theme.dart';
 import '../blocs/booking/my_bookings_cubit.dart';
 import '../blocs/auth/auth_cubit.dart';
+import '../utils/app_feedback.dart';
 import '../widgets/booking_card.dart';
 import '../widgets/state_views.dart';
 
@@ -26,12 +28,14 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cancel Booking?'),
-        content: const Text('Are you sure you want to cancel this booking?'),
+        title: const Text('Cancel this booking?'),
+        content: const Text(
+          'This slot will become available to others after cancellation.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('No'),
+            child: const Text('Keep booking'),
           ),
           TextButton(
             onPressed: () {
@@ -39,7 +43,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
               context.read<MyBookingsCubit>().cancelBooking(bookingId, userId);
             },
             child: const Text(
-              'Yes, Cancel',
+              'Cancel booking',
               style: TextStyle(color: Colors.red),
             ),
           ),
@@ -55,12 +59,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
       body: BlocConsumer<MyBookingsCubit, MyBookingsState>(
         listener: (context, state) {
           if (state is MyBookingsError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            AppFeedback.showError(context, state.message);
           }
         },
         builder: (context, state) {
@@ -69,7 +68,8 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
           } else if (state is MyBookingsEmpty) {
             return StateViews.empty(
               'No Bookings',
-              'You haven\'t booked any slots yet.',
+              'Your upcoming venue reservations will appear here.',
+              icon: Icons.event_busy_outlined,
             );
           } else if (state is MyBookingsLoaded) {
             final authState = context.read<AuthCubit>().state;
@@ -77,16 +77,34 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                 ? authState.user.id
                 : '';
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: state.bookings.length,
-              itemBuilder: (context, index) {
-                final booking = state.bookings[index];
-                return BookingCard(
-                  booking: booking,
-                  onCancel: () => _confirmCancel(booking.id, userId),
-                );
-              },
+            return RefreshIndicator(
+              onRefresh: () =>
+                  context.read<MyBookingsCubit>().loadBookings(userId),
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                ),
+                itemCount: state.bookings.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                      child: Text(
+                        'Manage your upcoming bookings and cancellations.',
+                        style: TextStyle(color: context.appColors.mutedText),
+                      ),
+                    );
+                  }
+                  final booking = state.bookings[index - 1];
+                  return BookingCard(
+                    booking: booking,
+                    onCancel: () => _confirmCancel(booking.id, userId),
+                  );
+                },
+              ),
             );
           }
           return const SizedBox.shrink();

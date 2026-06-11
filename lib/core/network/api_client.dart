@@ -2,16 +2,19 @@ import 'package:dio/dio.dart';
 import 'auth_token_refresher.dart';
 import 'http_service.dart';
 import 'token_storage.dart';
+import '../utils/connectivity_service.dart';
 
 class ApiClient implements HttpService {
   final Dio dio;
   final TokenStore tokenStore;
+  final ConnectivityChecker connectivityChecker;
   final TokenRefresher? tokenRefresher;
   final String baseUrl;
 
   ApiClient({
     required this.baseUrl,
     required this.tokenStore,
+    this.connectivityChecker = const AlwaysConnectedChecker(),
     this.tokenRefresher,
     Dio? dio,
   }) : dio =
@@ -27,7 +30,25 @@ class ApiClient implements HttpService {
     this.dio.interceptors.add(
       LogInterceptor(responseBody: true, requestBody: true),
     );
+    this.dio.interceptors.add(_connectivityInterceptor());
     this.dio.interceptors.add(_authInterceptor());
+  }
+
+  Interceptor _connectivityInterceptor() {
+    return InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final isConnected = await connectivityChecker.isConnected;
+        if (!isConnected) {
+          return handler.reject(
+            DioException.connectionError(
+              requestOptions: options,
+              reason: 'No internet connection',
+            ),
+          );
+        }
+        return handler.next(options);
+      },
+    );
   }
 
   Interceptor _authInterceptor() {

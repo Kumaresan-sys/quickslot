@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+
+import '../../core/theme.dart';
 import '../../../domain/entities/slot.dart';
 
 class SlotGrid extends StatelessWidget {
   final List<DailySlot> slots;
   final String? selectedSlotId;
-  final Function(DailySlot) onSlotSelected;
+  final ValueChanged<DailySlot> onSlotSelected;
 
   const SlotGrid({
     super.key,
@@ -22,57 +24,39 @@ class SlotGrid extends StatelessWidget {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 2.5,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 150,
+        mainAxisExtent: 52,
+        crossAxisSpacing: AppSpacing.md,
+        mainAxisSpacing: AppSpacing.md,
       ),
       itemCount: slots.length,
       itemBuilder: (context, index) {
         final slot = slots[index];
         final isAvailable = slot.status == 'AVAILABLE';
         final isSelected = slot.slotId == selectedSlotId;
+        final style = _SlotStyle.resolve(context, isAvailable, isSelected);
 
-        Color bgColor;
-        Color textColor;
-        Color borderColor;
-
-        if (!isAvailable) {
-          bgColor = Colors.red.withValues(alpha: 0.1);
-          textColor = Colors.red;
-          borderColor = Colors.red.withValues(alpha: 0.3);
-        } else if (isSelected) {
-          bgColor = Theme.of(context).primaryColor;
-          textColor = Colors.white;
-          borderColor = Theme.of(context).primaryColor;
-        } else {
-          bgColor = Colors.green.withValues(alpha: 0.1);
-          textColor = Colors.green;
-          borderColor = Colors.green.withValues(alpha: 0.3);
-        }
-
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: isAvailable ? () => onSlotSelected(slot) : null,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: borderColor),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  _formatTime(slot.slotTime),
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  ),
+        return Material(
+          color: style.backgroundColor,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            onTap: isAvailable ? () => onSlotSelected(slot) : null,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: style.borderColor, width: 1.2),
+              ),
+              child: Text(
+                _formatTime(slot.slotTime),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: style.textColor,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
@@ -83,11 +67,93 @@ class SlotGrid extends StatelessWidget {
   }
 
   String _formatTime(String timeStr) {
-    // timeStr is usually "HH:mm:ss", let's simplify to "HH:mm"
     final parts = timeStr.split(':');
-    if (parts.length >= 2) {
-      return '${parts[0]}:${parts[1]}';
-    }
+    if (parts.length >= 2) return '${parts[0]}:${parts[1]}';
     return timeStr;
+  }
+}
+
+class SlotLegend extends StatelessWidget {
+  const SlotLegend({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSpacing.md,
+      runSpacing: AppSpacing.sm,
+      children: const [
+        _LegendItem(label: 'Available', color: AppColors.success),
+        _LegendItem(label: 'Selected', color: AppColors.primary),
+        _LegendItem(label: 'Booked', color: AppColors.danger),
+      ],
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _LegendItem({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Text(
+          label,
+          style: TextStyle(
+            color: context.appColors.mutedText,
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SlotStyle {
+  final Color backgroundColor;
+  final Color borderColor;
+  final Color textColor;
+
+  const _SlotStyle({
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.textColor,
+  });
+
+  static _SlotStyle resolve(
+    BuildContext context,
+    bool isAvailable,
+    bool isSelected,
+  ) {
+    if (!isAvailable) {
+      return _SlotStyle(
+        backgroundColor: context.appColors.danger.withValues(alpha: 0.08),
+        borderColor: context.appColors.danger.withValues(alpha: 0.35),
+        textColor: context.appColors.danger,
+      );
+    }
+    if (isSelected) {
+      return _SlotStyle(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        borderColor: Theme.of(context).colorScheme.primary,
+        textColor: Colors.white,
+      );
+    }
+    return _SlotStyle(
+      backgroundColor: context.appColors.success.withValues(alpha: 0.08),
+      borderColor: context.appColors.success.withValues(alpha: 0.35),
+      textColor: context.appColors.success,
+    );
   }
 }

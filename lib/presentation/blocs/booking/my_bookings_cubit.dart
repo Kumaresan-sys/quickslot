@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/booking.dart';
 import '../../../domain/usecases/booking_usecases.dart';
+import '../../utils/error_message_mapper.dart';
 
 abstract class MyBookingsState extends Equatable {
   const MyBookingsState();
@@ -48,7 +49,7 @@ class MyBookingsCubit extends Cubit<MyBookingsState> {
         emit(MyBookingsLoaded(bookings));
       }
     } catch (e) {
-      emit(MyBookingsError(e.toString()));
+      emit(MyBookingsError(ErrorMessageMapper.map(e)));
     }
   }
 
@@ -63,7 +64,7 @@ class MyBookingsCubit extends Cubit<MyBookingsState> {
       await loadBookings(userId);
     } catch (e) {
       // Revert to old state and emit error somehow or just show error state
-      emit(MyBookingsError(e.toString()));
+      emit(MyBookingsError(ErrorMessageMapper.map(e)));
       emit(MyBookingsLoaded(currentState.bookings));
     }
   }
