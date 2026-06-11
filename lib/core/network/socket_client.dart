@@ -3,6 +3,20 @@ import 'package:socket_io_client/socket_io_client.dart';
 
 abstract class SlotUpdateSource {
   Stream<Map<String, dynamic>> get slotUpdates;
+
+  void holdSlot({
+    required String venueId,
+    required String slotId,
+    required String date,
+    required String userId,
+  });
+
+  void releaseSlot({
+    required String venueId,
+    required String slotId,
+    required String date,
+    required String userId,
+  });
 }
 
 class SocketClient implements SlotUpdateSource {
@@ -34,6 +48,36 @@ class SocketClient implements SlotUpdateSource {
     _socket?.onDisconnect((_) {});
 
     _socket?.connect();
+  }
+
+  @override
+  void holdSlot({
+    required String venueId,
+    required String slotId,
+    required String date,
+    required String userId,
+  }) {
+    _socket?.emit('slot_hold', {
+      'venueId': venueId,
+      'slotId': slotId,
+      'date': date,
+      'userId': userId,
+    });
+  }
+
+  @override
+  void releaseSlot({
+    required String venueId,
+    required String slotId,
+    required String date,
+    required String userId,
+  }) {
+    _socket?.emit('slot_release', {
+      'venueId': venueId,
+      'slotId': slotId,
+      'date': date,
+      'userId': userId,
+    });
   }
 
   void disconnect() {

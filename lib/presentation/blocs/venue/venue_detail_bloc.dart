@@ -30,15 +30,23 @@ class VenueDetailBloc extends Bloc<VenueDetailEvent, VenueDetailState> {
        ) {
     on<LoadSlotsEvent>(_onLoadSlots);
     on<SlotStatusUpdatedEvent>(_onSlotStatusUpdated);
+    on<HoldSlotEvent>(_onHoldSlot);
+    on<ReleaseSlotEvent>(_onReleaseSlot);
     on<BookSlotEvent>(_onBookSlot);
 
     // Listen to WebSocket for real-time slot status changes
     _socketSubscription = slotUpdateSource.slotUpdates.listen((data) {
-      if (data.containsKey('slotId') && data.containsKey('status')) {
+      if (data.containsKey('venueId') &&
+          data.containsKey('slotId') &&
+          data.containsKey('date') &&
+          data.containsKey('status')) {
         add(
           SlotStatusUpdatedEvent(
-            slotId: data['slotId'],
-            status: data['status'],
+            venueId: data['venueId'] as String,
+            slotId: data['slotId'] as String,
+            date: data['date'] as String,
+            status: data['status'] as String,
+            userId: data['userId'] as String?,
           ),
         );
       }
@@ -73,15 +81,17 @@ class VenueDetailBloc extends Bloc<VenueDetailEvent, VenueDetailState> {
     Emitter<VenueDetailState> emit,
   ) {
     if (state.slots.isEmpty) return;
+    if (event.date != state.selectedDate) return;
 
     final updatedSlots = state.slots.map((slot) {
-      if (slot.slotId == event.slotId) {
+      if (slot.slotId == event.slotId && slot.venueId == event.venueId) {
         return DailySlot(
           slotId: slot.slotId,
           venueId: slot.venueId,
           date: slot.date,
           slotTime: slot.slotTime,
           status: event.status,
+          heldByUserId: event.status == 'HELD' ? event.userId : null,
         );
       }
       return slot;
@@ -90,6 +100,24 @@ class VenueDetailBloc extends Bloc<VenueDetailEvent, VenueDetailState> {
     // Re-emit Loaded state with updated slots so the grid rebuilds
     emit(
       VenueDetailLoaded(selectedDate: state.selectedDate, slots: updatedSlots),
+    );
+  }
+
+  void _onHoldSlot(HoldSlotEvent event, Emitter<VenueDetailState> emit) {
+    slotUpdateSource.holdSlot(
+      venueId: event.venueId,
+      slotId: event.slotId,
+      date: event.date,
+      userId: event.userId,
+    );
+  }
+
+  void _onReleaseSlot(ReleaseSlotEvent event, Emitter<VenueDetailState> emit) {
+    slotUpdateSource.releaseSlot(
+      venueId: event.venueId,
+      slotId: event.slotId,
+      date: event.date,
+      userId: event.userId,
     );
   }
 

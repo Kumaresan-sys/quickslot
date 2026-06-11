@@ -5,11 +5,7 @@ class Slot extends Equatable {
   final String venueId;
   final String slotTime; // Format: HH:mm:ss
 
-  const Slot({
-    required this.id,
-    required this.venueId,
-    required this.slotTime,
-  });
+  const Slot({required this.id, required this.venueId, required this.slotTime});
 
   @override
   List<Object?> get props => [id, venueId, slotTime];
@@ -20,7 +16,8 @@ class DailySlot extends Equatable {
   final String venueId;
   final String date;
   final String slotTime;
-  final String status; // 'AVAILABLE' or 'BOOKED'
+  final String status; // 'AVAILABLE', 'HELD', or 'BOOKED'
+  final String? heldByUserId;
 
   const DailySlot({
     required this.slotId,
@@ -28,8 +25,16 @@ class DailySlot extends Equatable {
     required this.date,
     required this.slotTime,
     required this.status,
+    this.heldByUserId,
   });
 
   @override
-  List<Object?> get props => [slotId, venueId, date, slotTime, status];
+  List<Object?> get props => [
+    slotId,
+    venueId,
+    date,
+    slotTime,
+    status,
+    heldByUserId,
+  ];
 }
