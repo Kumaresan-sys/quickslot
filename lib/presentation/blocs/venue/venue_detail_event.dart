@@ -18,13 +18,56 @@ class LoadSlotsEvent extends VenueDetailEvent {
 }
 
 class SlotStatusUpdatedEvent extends VenueDetailEvent {
+  final String venueId;
   final String slotId;
-  final String status; // 'AVAILABLE' or 'BOOKED'
+  final String date;
+  final String status; // 'AVAILABLE', 'HELD', or 'BOOKED'
+  final String? userId;
 
-  const SlotStatusUpdatedEvent({required this.slotId, required this.status});
+  const SlotStatusUpdatedEvent({
+    required this.venueId,
+    required this.slotId,
+    required this.date,
+    required this.status,
+    this.userId,
+  });
 
   @override
-  List<Object?> get props => [slotId, status];
+  List<Object?> get props => [venueId, slotId, date, status, userId];
+}
+
+class HoldSlotEvent extends VenueDetailEvent {
+  final String venueId;
+  final String slotId;
+  final String date;
+  final String userId;
+
+  const HoldSlotEvent({
+    required this.venueId,
+    required this.slotId,
+    required this.date,
+    required this.userId,
+  });
+
+  @override
+  List<Object?> get props => [venueId, slotId, date, userId];
+}
+
+class ReleaseSlotEvent extends VenueDetailEvent {
+  final String venueId;
+  final String slotId;
+  final String date;
+  final String userId;
+
+  const ReleaseSlotEvent({
+    required this.venueId,
+    required this.slotId,
+    required this.date,
+    required this.userId,
+  });
+
+  @override
+  List<Object?> get props => [venueId, slotId, date, userId];
 }
 
 class BookSlotEvent extends VenueDetailEvent {

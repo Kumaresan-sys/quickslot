@@ -7,6 +7,7 @@ import '../../../domain/entities/slot.dart';
 import '../blocs/venue/venue_detail_bloc.dart';
 import '../blocs/venue/venue_detail_event.dart';
 import '../blocs/venue/venue_detail_state.dart';
+import '../blocs/auth/auth_cubit.dart';
 import '../widgets/booking_bar.dart';
 import '../widgets/date_selector_bar.dart';
 import '../widgets/slot_grid.dart';
@@ -24,6 +25,12 @@ class VenueDetailPage extends StatefulWidget {
 
 class _VenueDetailPageState extends State<VenueDetailPage> {
   DailySlot? _selectedSlot;
+
+  String? get _currentUserId {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthAuthenticated) return authState.user.id;
+    return null;
+  }
 
   @override
   void initState() {
@@ -49,6 +56,7 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
     );
     if (picked != null && picked != currentDate) {
       if (!context.mounted) return;
+      _releaseSelectedSlot();
       setState(() {
         _selectedSlot = null; // Clear selection on date change
       });
@@ -75,13 +83,88 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
     );
   }
 
+  void _handleSlotSelected(DailySlot slot) {
+    final userId = _currentUserId;
+    if (userId == null) {
+      AppFeedback.showError(context, 'Please log in again.');
+      return;
+    }
+
+    _releaseSelectedSlot();
+    setState(() {
+      _selectedSlot = slot;
+    });
+
+    context.read<VenueDetailBloc>().add(
+      HoldSlotEvent(
+        venueId: widget.venue.id,
+        slotId: slot.slotId,
+        date: context.read<VenueDetailBloc>().state.selectedDate,
+        userId: userId,
+      ),
+    );
+  }
+
+  void _releaseSelectedSlot() {
+    final selectedSlot = _selectedSlot;
+    final userId = _currentUserId;
+    if (selectedSlot == null || userId == null) return;
+
+    context.read<VenueDetailBloc>().add(
+      ReleaseSlotEvent(
+        venueId: widget.venue.id,
+        slotId: selectedSlot.slotId,
+        date: context.read<VenueDetailBloc>().state.selectedDate,
+        userId: userId,
+      ),
+    );
+  }
+
+  void _clearSelectionIfTaken(VenueDetailState state) {
+    final selectedSlot = _selectedSlot;
+    if (selectedSlot == null || state.slots.isEmpty) return;
+
+    DailySlot? updatedSlot;
+    for (final slot in state.slots) {
+      if (slot.slotId == selectedSlot.slotId) {
+        updatedSlot = slot;
+        break;
+      }
+    }
+    if (updatedSlot == null) return;
+
+    final userId = _currentUserId;
+    final heldByOther =
+        updatedSlot.status == 'HELD' && updatedSlot.heldByUserId != userId;
+    final booked = updatedSlot.status == 'BOOKED';
+    if (!heldByOther && !booked) return;
+
+    setState(() {
+      _selectedSlot = null;
+    });
+    AppFeedback.showError(
+      context,
+      booked
+          ? 'That slot was just booked. Choose another time.'
+          : 'That slot is being selected by another user.',
+    );
+  }
+
+  @override
+  void dispose() {
+    _releaseSelectedSlot();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.venue.name)),
       body: BlocConsumer<VenueDetailBloc, VenueDetailState>(
         listener: (context, state) {
+          _clearSelectionIfTaken(state);
           if (state is BookingSuccess) {
+            _selectedSlot = null;
             AppFeedback.showSuccess(context, 'Booking confirmed.');
             Navigator.pop(context); // Go back to venue list
           } else if (state is BookingConflict) {
@@ -154,11 +237,7 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
                           SlotGrid(
                             slots: state.slots,
                             selectedSlotId: _selectedSlot?.slotId,
-                            onSlotSelected: (slot) {
-                              setState(() {
-                                _selectedSlot = slot;
-                              });
-                            },
+                            onSlotSelected: _handleSlotSelected,
                           ),
                         ],
                       ),

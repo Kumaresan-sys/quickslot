@@ -35,7 +35,7 @@ class SlotGrid extends StatelessWidget {
         final slot = slots[index];
         final isAvailable = slot.status == 'AVAILABLE';
         final isSelected = slot.slotId == selectedSlotId;
-        final style = _SlotStyle.resolve(context, isAvailable, isSelected);
+        final style = _SlotStyle.resolve(context, slot.status, isSelected);
 
         return Material(
           color: style.backgroundColor,
@@ -84,6 +84,7 @@ class SlotLegend extends StatelessWidget {
       children: const [
         _LegendItem(label: 'Available', color: AppColors.success),
         _LegendItem(label: 'Selected', color: AppColors.primary),
+        _LegendItem(label: 'Held', color: AppColors.warning),
         _LegendItem(label: 'Booked', color: AppColors.danger),
       ],
     );
@@ -133,21 +134,28 @@ class _SlotStyle {
 
   static _SlotStyle resolve(
     BuildContext context,
-    bool isAvailable,
+    String status,
     bool isSelected,
   ) {
-    if (!isAvailable) {
-      return _SlotStyle(
-        backgroundColor: context.appColors.danger.withValues(alpha: 0.08),
-        borderColor: context.appColors.danger.withValues(alpha: 0.35),
-        textColor: context.appColors.danger,
-      );
-    }
     if (isSelected) {
       return _SlotStyle(
         backgroundColor: Theme.of(context).colorScheme.primary,
         borderColor: Theme.of(context).colorScheme.primary,
         textColor: Colors.white,
+      );
+    }
+    if (status == 'HELD') {
+      return _SlotStyle(
+        backgroundColor: context.appColors.warning.withValues(alpha: 0.10),
+        borderColor: context.appColors.warning.withValues(alpha: 0.45),
+        textColor: context.appColors.warning,
+      );
+    }
+    if (status == 'BOOKED') {
+      return _SlotStyle(
+        backgroundColor: context.appColors.danger.withValues(alpha: 0.08),
+        borderColor: context.appColors.danger.withValues(alpha: 0.35),
+        textColor: context.appColors.danger,
       );
     }
     return _SlotStyle(
