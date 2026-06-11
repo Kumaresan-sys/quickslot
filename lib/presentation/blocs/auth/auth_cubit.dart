@@ -43,13 +43,9 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> checkAuth() async {
     emit(AuthLoading());
     try {
-      final isLoggedIn = await checkAuthUseCase();
-      if (isLoggedIn) {
-        // Here we could fetch the user profile if the API supported it
-        // For now, we'll just emit an empty User object to signal authentication
-        emit(
-          const AuthAuthenticated(User(id: 'cached', name: 'User', email: '')),
-        );
+      final user = await checkAuthUseCase();
+      if (user != null) {
+        emit(AuthAuthenticated(user));
       } else {
         emit(AuthUnauthenticated());
       }
