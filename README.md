@@ -1,77 +1,56 @@
-# quickslot ![Flutter](https://img.shields.io/badge/Flutter-%3E%3D3.0-blue?logo=flutter) ![License: MIT](https://img.shields.io/badge/License-MIT-green)
+# QuickSlot Flutter App
 
-## Overview
+Flutter client for QuickSlot, a small sports-slot booking app backed by the
+QuickSlot API in `../QuickSlot_Api`.
 
-**quickslot** is a modern, premium Flutter starter template that provides a clean architecture, state‑management setup, and ready‑to‑use UI components. Ideal for developers looking to jump‑start a new mobile app with best practices.
+## Run Locally
 
-## Features
-
-- ✨ Elegant UI with dark‑mode support
-- 📦 Pre‑configured dependencies (provider, go_router, freezed)
-- 🧪 Unit & widget testing setup
-- 🚀 CI/CD ready (GitHub Actions workflow)
-- 📱 Responsive layout for phones and tablets
-
-## Getting Started
-
-### Prerequisites
-
-- Flutter SDK **≥ 3.0** (see the badge above)
-- Dart 2.19+
-- Android Studio / VS Code
-
-### Installation
+Start the backend first:
 
 ```bash
-git clone https://github.com/Kumaresanj/quickslot.git
-cd quickslot
-flutter pub get
+cd ../QuickSlot_Api
+docker compose up -d --build
 ```
 
-### Running the App
+Install and run the app:
 
-Configure the backend endpoints in `assets/.env`:
+```bash
+cd ../quickslot
+flutter pub get
+flutter run
+```
+
+For an Android emulator, `assets/.env` should use:
 
 ```env
 QUICKSLOT_API_BASE_URL=http://10.0.2.2:5001
 QUICKSLOT_SOCKET_URL=ws://10.0.2.2:5001
 ```
 
+For a physical phone, replace `10.0.2.2` with the laptop's LAN IP address and
+keep the phone on the same Wi-Fi network.
+
+## Demo Users
+
+The login screen includes one-tap seeded users:
+
+- John Doe: `test@example.com` / `password123`
+- Jane Smith: `jane@example.com` / `password123`
+
+## App Structure
+
+- `lib/core`: API, socket, configuration, connectivity utilities
+- `lib/domain`: entities, repository contracts, use cases, booking failure classifier
+- `lib/data`: JSON models and repository implementations
+- `lib/presentation`: pages, reusable widgets, Cubit/Bloc state
+
+State management uses `flutter_bloc` because the booking flow has explicit
+loading, loaded, empty, conflict, and error states. Keeping that state outside
+widgets makes the double-booking conflict easy to handle and test.
+
+## Verification
+
 ```bash
-flutter run
+flutter test
 ```
 
-For production or staging, replace the values with the matching HTTPS/WSS
-endpoints before building.
-
-## Usage
-
-Explore the `lib/` directory to find:
-
-- `core/` – essential services and utilities
-- `features/` – feature‑specific modules
-- `ui/` – reusable widgets and screens
-
-Modify `main.dart` to start customizing your application.
-
-## Roadmap
-
-- [ ] Add support for Riverpod integration
-- [ ] Publish a package to `pub.dev`
-- [ ] Provide dark‑mode theme toggling UI
-
-## Changelog
-
-**v1.0.0** – Initial release with core architecture and sample screens.
-
-## Contributing
-
-Contributions are welcome! Please fork the repository, create a feature branch, and submit a pull request. Follow the [code of conduct](CODE_OF_CONDUCT.md).
-
-## License
-
-This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.
-
-## Contact
-
-**Kumaresan J** – [GitHub](https://github.com/Kumaresanj) – Email: kumaresanj@example.com

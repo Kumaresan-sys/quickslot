@@ -15,6 +15,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController(text: 'test@example.com');
   final _passwordController = TextEditingController(text: 'password123');
+  static const _demoUsers = [
+    ('John Doe', 'test@example.com'),
+    ('Jane Smith', 'jane@example.com'),
+  ];
 
   @override
   void dispose() {
@@ -31,6 +35,12 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _loginAsDemoUser(String email) {
+    _emailController.text = email;
+    _passwordController.text = 'password123';
+    _handleLogin();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,7 +52,10 @@ class _LoginPageState extends State<LoginPage> {
             );
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         },
@@ -50,7 +63,10 @@ class _LoginPageState extends State<LoginPage> {
           return Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Theme.of(context).scaffoldBackgroundColor, Theme.of(context).primaryColor.withValues(alpha: 0.2)],
+                colors: [
+                  Theme.of(context).scaffoldBackgroundColor,
+                  Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -62,17 +78,39 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.sports_tennis, size: 64, color: Colors.blueAccent),
+                      const Icon(
+                        Icons.sports_tennis,
+                        size: 64,
+                        color: Colors.blueAccent,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'QuickSlot',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       const Text('Book your favorite venues instantly.'),
                       const SizedBox(height: 32),
+                      Row(
+                        children: _demoUsers.map((user) {
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.person),
+                                label: Text(user.$1),
+                                onPressed: state is AuthLoading
+                                    ? null
+                                    : () => _loginAsDemoUser(user.$2),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
                       TextField(
                         controller: _emailController,
                         decoration: const InputDecoration(
